@@ -33,7 +33,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://твой-фронтенд.vercel.app"],
+    origin: ["http://localhost:5173", "https://eoz-frontend.vercel.app/"],
     methods: ["GET", "POST", "PATCH"],
   }),
 );
