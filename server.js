@@ -4,6 +4,28 @@ const cors = require("cors");
 const keywords = require("./keywords.json");
 const mongoose = require("mongoose");
 require("dotenv").config();
+const { GoogleGenAI } = require("@google/genai");
+
+// Инициализация клиентов
+const ai = new GoogleGenAI({
+  apiKey:
+    process.env.GEMINI_API_KEY ||
+    "AQ.Ab8RN6Jw4tsYfTqwSAX35BkFEShs7T6xUIiRAD7S3iebWbNBAw",
+});
+
+async function askGemini(dataset) {
+  try {
+    const response = await ai.interactions.create({
+      model: "gemini-3.6-flash",
+      input: `${dataset} из этого массива объектов убери те объекты у которых поле name не связано с потенциальной закупкой услуг по сервисчам 1С и связванным с ней услугами. Верни отфильтрованный объект такого же типа. Верни тексчт который можно будет вставить в JSON.parse() без ошибки`,
+    });
+
+    return response.output_text;
+  } catch (error) {
+    console.error("Ошибка запроса к Gemini:", error);
+    throw error;
+  }
+}
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -54,7 +76,7 @@ app.get("/api/advertisements", async (req, res) => {
           filter: {
             tru: null,
             name: keywords[i],
-            priceFrom: "1000000",
+            priceFrom: process.env.COST_FILTER || "10000",
             isOOI: 0,
           },
         },
@@ -175,6 +197,41 @@ app.patch("/api/advertisements/:id/status", async (req, res) => {
 
     res.status(500).json({
       error: "Ошибка обновления статуса",
+    });
+  }
+});
+
+app.get("/api/ai_filter", async (req, res) => {
+  try {
+    const advertisements = await Advertisement.find({ status: "new" }).lean();
+    const dataset = advertisements.map((c) => ({
+      id: c.id,
+      name: c.nameru,
+      sum: c.sum,
+    }));
+    const aiFiltered = await askGemini(JSON.stringify(dataset));
+    const filteredAdvertisements = JSON.parse(aiFiltered);
+
+    const arrayA = filteredAdvertisements.map((fa) => fa.id);
+    const arrayB = dataset.map((d) => d.id);
+
+    const updateResult = await Advertisement.updateMany(
+      {
+        id: {
+          $in: arrayB,
+          $nin: arrayA,
+        },
+      },
+      {
+        $set: { status: "reject" },
+      },
+    );
+    res.json({});
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Ошибка чтения БД",
     });
   }
 });
