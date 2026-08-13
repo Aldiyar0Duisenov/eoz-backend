@@ -54,7 +54,7 @@ app.get("/api/advertisements", async (req, res) => {
           filter: {
             tru: null,
             name: keywords[i],
-            priceFrom: "1000000",
+            priceFrom: "100000",
             isOOI: 0,
           },
         },
