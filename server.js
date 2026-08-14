@@ -17,7 +17,7 @@ async function askGemini(dataset) {
   try {
     const response = await ai.interactions.create({
       model: "gemini-3.6-flash",
-      input: `${dataset} из этого массива объектов убери те объекты у которых поле name не связано с потенциальной закупкой услуг по сервисчам 1С и связванным с ней услугами. Верни отфильтрованный объект такого же типа. Верни тексчт который можно будет вставить в JSON.parse() без ошибки`,
+      input: `${dataset} из этого массива объектов создай массив id объектов у которых поле name хоть как-то может быть связано с потенциальной закупкой услуг по сервисчам 1С и связванным с ней услугами, при условии что те кто давали название были заинтересованы скрыть названия. К примеру сопровождение информационной системы считается. Верни отфильтрованный массив id. Верни тексчт который можно будет вставить в JSON.parse() без ошибки`,
     });
 
     return response.output_text;
@@ -212,14 +212,13 @@ app.get("/api/ai_filter", async (req, res) => {
     const aiFiltered = await askGemini(JSON.stringify(dataset));
     const filteredAdvertisements = JSON.parse(aiFiltered);
 
-    const arrayA = filteredAdvertisements.map((fa) => fa.id);
-    const arrayB = dataset.map((d) => d.id);
+    const datasetId = dataset.map((d) => d.id);
 
     const updateResult = await Advertisement.updateMany(
       {
         id: {
-          $in: arrayB,
-          $nin: arrayA,
+          $in: datasetId,
+          $nin: filteredAdvertisements,
         },
       },
       {
