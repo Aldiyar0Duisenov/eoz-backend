@@ -1,0 +1,10 @@
+[phases.setup]
+nixPkgs = [
+  '...',
+  'chromium',
+  'nss',
+  'freetype',
+  'harfbuzz',
+  'ca-certificates',
+  'ttf-freefont'
+]
