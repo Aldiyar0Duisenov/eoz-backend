@@ -258,6 +258,7 @@ app.get("/scrape", async (req, res) => {
     }
 
     browser = await puppeteer.launch({
+      headless: true,
       //executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       args: [
         "--no-sandbox",
